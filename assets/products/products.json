@@ -1,0 +1,178 @@
+[
+  {
+    "id": "11",
+    "title": "سندوتش دجاج مشوي",
+    "category": "السندوتشات",
+    "price": 7500,
+    "currency": "YER",
+    "barcode": "110001",
+    "images": ["assets/products/11.jpg", "assets/products/11-1.jpg"],
+    "description": "سندوتش دجاج مشوي متبل بصلصة خاصة وخضار طازج داخل خبز محمص.",
+    "stock": 120
+  },
+  {
+    "id": "12",
+    "title": "سندوتش لحم بالعجين",
+    "category": "السندوتشات",
+    "price": 9000,
+    "currency": "YER",
+    "barcode": "110002",
+    "images": ["assets/products/12.jpg"],
+    "description": "سندوتش لحم طازج متبل يقدم مع صوص مميز وخضار.",
+    "stock": 80
+  },
+  {
+    "id": "21",
+    "title": "قلاب فطور مخصوص",
+    "category": "قلابات الفطور والعشاء",
+    "price": 3000,
+    "currency": "YER",
+    "barcode": "210001",
+    "images": ["assets/products/21.jpg"],
+    "description": "قلاب فول، بيض، بطاطس، وخبز طازج — مثالي لبدء اليوم.",
+    "stock": 200
+  },
+  {
+    "id": "31",
+    "title": "خبز فتة شعبي",
+    "category": "الخبز والفتة",
+    "price": 1200,
+    "currency": "YER",
+    "barcode": "310001",
+    "images": ["assets/products/31.jpg"],
+    "description": "خبز طازج يومياً مناسب لفات الفتة والوجبات التقليدية.",
+    "stock": 500
+  },
+  {
+    "id": "41",
+    "title": "مطبق لحم بعجين",
+    "category": "المطبقية",
+    "price": 6000,
+    "currency": "YER",
+    "barcode": "410001",
+    "images": ["assets/products/41.jpg"],
+    "description": "مطبق لحم لذيذ مع بهارات تقليدية وخضار مفرومة.",
+    "stock": 90
+  },
+  {
+    "id": "51",
+    "title": "شاورما دجاج كلاسيك",
+    "category": "الشاورما",
+    "price": 7000,
+    "currency": "YER",
+    "barcode": "510001",
+    "images": ["assets/products/51.jpg"],
+    "description": "شاورما دجاج متبلة وتقدم مع بطاطس وسلطة طازجة.",
+    "stock": 150
+  },
+  {
+    "id": "61",
+    "title": "عصير برتقال طازج 500مل",
+    "category": "المشروبات والعصائر الطازجة",
+    "price": 2000,
+    "currency": "YER",
+    "barcode": "610001",
+    "images": ["assets/products/61.jpg"],
+    "description": "عصير برتقال طازج معبأ فوراً للحفاظ على النكهة والفيتامينات.",
+    "stock": 300
+  },
+  {
+    "id": "71",
+    "title": "قهوة عربي / شاي",
+    "category": "المشروبات الساخنة والغازية",
+    "price": 800,
+    "currency": "YER",
+    "barcode": "710001",
+    "images": ["assets/products/71.jpg"],
+    "description": "قهوة عربية تقليدية أو شاي حسب الطلب، مقدمة ساخنة.",
+    "stock": 9999
+  },
+  {
+    "id": "81",
+    "title": "عصير أفوكادو بالحليب",
+    "category": "عصائر الافوكادو",
+    "price": 4000,
+    "currency": "YER",
+    "barcode": "810001",
+    "images": ["assets/products/81.jpg"],
+    "description": "عصير أفوكادو كريمي مع حليب وموز، مشروب غني وسلس.",
+    "stock": 120
+  },
+  {
+    "id": "91",
+    "title": "طبق رز مع مرق دجاج",
+    "category": "اطباق الارز والطبيخ",
+    "price": 8500,
+    "currency": "YER",
+    "barcode": "910001",
+    "images": ["assets/products/91.jpg"],
+    "description": "طبق رز أبيض يقدم مع مرق دجاج غني ومتبّل.",
+    "stock": 60
+  },
+  {
+    "id": "101",
+    "title": "صدر دجاج متبل مشوي",
+    "category": "اللحوم والدجاج",
+    "price": 12000,
+    "currency": "YER",
+    "barcode": "101001",
+    "images": ["assets/products/101.jpg"],
+    "description": "صدر دجاج متبل ومشوي بطريقة تحافظ على العصارة والنكهة.",
+    "stock": 70
+  },
+  {
+    "id": "111",
+    "title": "شيش كباب لحم (لوح 1 كيلو)",
+    "category": "المشاوي والكباب",
+    "price": 35000,
+    "currency": "YER",
+    "barcode": "111001",
+    "images": ["assets/products/111.jpg"],
+    "description": "شيش كباب لحم متبل جاهز للشوي بنكهة مميزة.",
+    "stock": 30
+  },
+  {
+    "id": "121",
+    "title": "سمك مشوي بطاطس",
+    "category": "المأكولات البحرية",
+    "price": 22000,
+    "currency": "YER",
+    "barcode": "121001",
+    "images": ["assets/products/121.jpg"],
+    "description": "سمك طازج مشوي يقدم مع بطاطس وخضار سوتيه.",
+    "stock": 25
+  },
+  {
+    "id": "131",
+    "title": "بيتزا مارجريتا وسط",
+    "category": "البيتزا والفطائر",
+    "price": 15000,
+    "currency": "YER",
+    "barcode": "131001",
+    "images": ["assets/products/131.jpg"],
+    "description": "بيتزا مارجريتا مع جبنة موزاريلا وصلصة طماطم طازجة.",
+    "stock": 40
+  },
+  {
+    "id": "141",
+    "title": "برجر لحم طازج مع بطاطس",
+    "category": "الوجبات السريعة",
+    "price": 9500,
+    "currency": "YER",
+    "barcode": "141001",
+    "images": ["assets/products/141.jpg"],
+    "description": "برجر لحم طازج يقدم مع بطاطس مقلية وصلصة خاصة.",
+    "stock": 110
+  },
+  {
+    "id": "151",
+    "title": "سلطة فتوش كبيرة",
+    "category": "السلطات والمقبلات",
+    "price": 4200,
+    "currency": "YER",
+    "barcode": "151001",
+    "images": ["assets/products/151.jpg"],
+    "description": "سلطة فتوش طازجة تحتوي خيار، طماطم، خس وخبز محمص.",
+    "stock": 140
+  }
+]
