@@ -18,6 +18,8 @@
     .btn-primary{ background:var(--brand-primary); color:white; }
     .price-badge{ background:var(--brand-gold); color:var(--brand-brown); padding:4px 8px; border-radius:8px; font-weight:700; }
     .card{ background:white; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.08); padding:14px; }
+    /* زر العربة الثابت أسفل الشاشة */
+    .cart-floating { position: fixed; left: 1.25rem; bottom: 1.25rem; z-index: 60; }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -100,6 +102,11 @@
     </div>
   </div>
 
+  <!-- Floating cart button -->
+  <div class="cart-floating">
+    <button id="floatingCartBtn" class="bg-brand-primary text-white px-4 py-2 rounded-full shadow-lg">عربة الطلب (<span id="cartCount">0</span>)</button>
+  </div>
+
 <script>
 /* ----- إعدادات (استبدل القيم التالية بأرقامك الحقيقية بعد اللصق) ----- */
 const CONTACT = {
@@ -110,61 +117,151 @@ const CONTACT = {
   DEL_BRANCH2: 'REPLACE_DELIVERY2',
   DEL_MAIN: 'REPLACE_DELIVERY_MAIN'
 };
-/* ملف المنتجات */
-const PRODUCTS_JSON = '/products/products.json';
+/* ملف المنتجات — مسار نسبي ليناسب GitHub Pages وNetlify */
+const PRODUCTS_JSON = 'products/products.json';
 
 /* مساعدات DOM */
 const q = (s)=>document.querySelector(s);
 document.getElementById('year').textContent = new Date().getFullYear();
 
+/* ---------- Cart (localStorage) ---------- */
+const cartKey = 'alkhaled_cart_v1';
+function loadCart(){ try{ return JSON.parse(localStorage.getItem(cartKey)||'[]'); }catch(e){return [];} }
+function saveCart(c){ localStorage.setItem(cartKey, JSON.stringify(c)); updateCartCount(); }
+function updateCartCount(){ const n = loadCart().reduce((s,i)=>s+i.qty,0); const el = document.getElementById('cartCount'); if(el) el.textContent = n; }
+function addToCart(product, qty=1){
+  if(!product) return;
+  const cart = loadCart();
+  const ex = cart.find(i=>i.id===product.id);
+  if(ex) ex.qty += qty; else cart.push({ id:product.id, title:product.title, price:product.price, currency:product.currency, qty, barcode:product.barcode || '' });
+  saveCart(cart);
+}
+
+/* زر فتح المودال من زر عائم */
+q('#floatingCartBtn').addEventListener('click', ()=>{ renderCartModal(); q('#cartModal').classList.remove('hidden'); q('#cartModal').classList.add('flex'); });
+
+/* زر إغلاق المودال */
+q('#closeCart').addEventListener('click', ()=>{ q('#cartModal').classList.add('hidden'); q('#cartModal').classList.remove('flex'); });
+
+/* عرض مودال العربة */
+function renderCartModal(){
+  const cart = loadCart();
+  const box = q('#cartItems');
+  box.innerHTML = '';
+  let total = 0;
+  if(cart.length === 0){
+    box.innerHTML = '<div>العربة فارغة</div>';
+    q('#cartTotal').textContent = '0';
+    return;
+  }
+  cart.forEach(item=>{
+    total += item.price * item.qty;
+    const div = document.createElement('div');
+    div.className = 'flex items-center justify-between';
+    div.innerHTML = `<div><strong>${item.title}</strong><div class="text-sm text-slate-500">باركود: ${item.barcode||'—'}</div></div>
+      <div class="flex items-center gap-2">
+        <input type="number" min="1" value="${item.qty}" data-id="${item.id}" class="w-16 p-1 border rounded qtyInput">
+        <div class="text-right">${(item.price*item.qty).toFixed(2)} ${item.currency||''}</div>
+      </div>`;
+    box.appendChild(div);
+  });
+  q('#cartTotal').textContent = total.toFixed(2);
+
+  // attach change listeners
+  document.querySelectorAll('.qtyInput').forEach(inp=>{
+    inp.addEventListener('change', (e)=>{
+      const id = e.target.dataset.id;
+      const val = parseInt(e.target.value||1);
+      const cart = loadCart();
+      const it = cart.find(x=>x.id===id);
+      if(it){ it.qty = val; saveCart(cart); renderCartModal(); }
+    });
+  });
+}
+
+/* Checkout -> WhatsApp */
+q('#checkoutBtn').addEventListener('click', ()=>{
+  const cart = loadCart();
+  if(cart.length === 0){ alert('العربة فارغة'); return; }
+  // اختر رقم التوصيل (هنا نستخدم DEL_MAIN افتراضياً)
+  const wa = CONTACT.DEL_MAIN || 'REPLACE_DELIVERY_MAIN';
+  let msg = `طلب%20من%20AlKhaled%20Sweets%0A`;
+  let total = 0;
+  cart.forEach(it=>{
+    total += it.price * it.qty;
+    msg += `المنتج:%20${encodeURIComponent(it.title)}%20|%20الكمية:%20${it.qty}%20|%20باركود:%20${encodeURIComponent(it.barcode)}%0A`;
+  });
+  msg += `الإجمالي:%20${total.toFixed(2)}%0A`;
+  const url = `https://wa.me/${wa}?text=${msg}`;
+  window.open(url, '_blank');
+});
+
+/* ---------- Catalog & Product Page ---------- */
+
 /* تحميل وتهيئة */
 async function init(){
-  // تعبئة قائمة الفئات لاحقًا من ملف JSON
+  updateCartCount();
   let products = [];
   try{
     const res = await fetch(PRODUCTS_JSON);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
     products = await res.json();
   }catch(e){
-    q('#catalog').innerHTML = '<div class="p-6 card">لم يتم العثور على ملف products.json. ارفع /products/products.json عبر GitHub.</div>';
+    console.error('Error loading products.json', e);
+    q('#catalog').innerHTML = '<div class="p-6 card">لم يتم العثور على ملف products.json. ارفع products/products.json عبر GitHub.</div>';
     return;
   }
 
   // تعبئة قائمة الفلترة (فئات فريدة)
   const cats = [...new Set(products.map(p=>p.category || 'عام'))];
   const sel = q('#categoryFilter');
+  // أغلب الأحيان ستجد الخيار الافتراضي، نضيف الفئات
   cats.forEach(c=>{
-    const opt = document.createElement('option'); opt.value = c; opt.textContent = c; sel.appendChild(opt);
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c; sel.appendChild(opt);
   });
-
-  renderCatalog(products);
 
   // أحداث البحث والفلترة
   q('#search').addEventListener('input', ()=>renderCatalog(products));
   q('#categoryFilter').addEventListener('change', ()=>renderCatalog(products));
+
+  // عرض الكاتالوج أو صفحة المنتج حسب الرابط
+  const params = new URLSearchParams(location.search);
+  const productId = params.get('product');
+  if(productId){
+    const p = products.find(x=>x.id === productId);
+    showProductPage(p);
+  } else {
+    renderCatalog(products);
+  }
 }
 
-/* عرض الكاتالوج */
+/* renderCatalog: تبني شبكة البطاقات */
 function renderCatalog(products){
   const search = (q('#search').value||'').trim().toLowerCase();
   const cat = q('#categoryFilter').value;
   const list = products.filter(p=>{
     if(cat && p.category !== cat) return false;
-    if(search && !(p.title + ' ' + (p.description||'')).toLowerCase().includes(search)) return false;
+    if(search && !( (p.title||'').toLowerCase().includes(search) || (p.description||'').toLowerCase().includes(search) )) return false;
     return true;
   });
 
   const container = q('#catalog');
   container.innerHTML = '';
-  if(list.length===0){ container.innerHTML = '<div class="p-6 card">لا توجد نتائج</div>'; return; }
+  if(list.length === 0){
+    container.innerHTML = '<div class="p-6 card">لا توجد نتائج</div>';
+    window._LAST_PRODUCTS = []; return;
+  }
 
-  // Grid
   const grid = document.createElement('div');
   grid.className = 'grid md:grid-cols-3 gap-6';
   list.forEach(p=>{
     const div = document.createElement('div');
     div.className = 'card flex flex-col';
+    // image fallback: إذا لم تكن الصور معرفة نتجنب كسر الصورة
+    const imgSrc = (p.images && p.images.length) ? p.images[0] : 'assets/images/logo.png';
     div.innerHTML = `
-      <img src="${p.images[0]}" alt="${p.title}" class="product-img rounded mb-3 w-full">
+      <img src="${imgSrc}" alt="${p.title}" class="product-img rounded mb-3 w-full" onerror="this.src='assets/images/logo.png'">
       <h3 class="font-bold text-lg">${p.title}</h3>
       <p class="text-slate-600 mt-1">${(p.description||'').slice(0,90)}${(p.description||'').length>90?'...':''}</p>
       <div class="mt-auto flex items-center justify-between pt-3">
@@ -179,7 +276,7 @@ function renderCatalog(products){
   });
   container.appendChild(grid);
 
-  // أزرار
+  // أزرار التفاعل
   document.querySelectorAll('.viewBtn').forEach(b=>b.addEventListener('click', e=>{
     location.search = '?product=' + e.currentTarget.dataset.id;
   }));
@@ -190,77 +287,26 @@ function renderCatalog(products){
     alert('تم إضافة المنتج للعربة');
   }));
 
-  window._LAST_PRODUCTS = products; // حفظ مؤقت
+  window._LAST_PRODUCTS = products; // حفظ مؤقت للوصول عند الضغط على أزرار الإضافة
 }
 
-/* ---------- عربة بسيطة (localStorage) ---------- */
-const cartKey = 'alkhaled_cart_v1';
-function loadCart(){ try{ return JSON.parse(localStorage.getItem(cartKey)||'[]'); }catch(e){return [];} }
-function saveCart(c){ localStorage.setItem(cartKey, JSON.stringify(c)); updateCartCount(); }
-function updateCartCount(){ const n = loadCart().reduce((s,i)=>s+i.qty,0); let el = document.getElementById('cartCount'); if(!el){ el = document.createElement('span'); el.id='cartCount'; document.body.appendChild(el); } el.textContent = n; }
-function addToCart(product, qty=1){
-  if(!product) return;
-  const cart = loadCart();
-  const ex = cart.find(i=>i.id===product.id);
-  if(ex) ex.qty += qty; else cart.push({ id:product.id, title:product.title, price:product.price, currency:product.currency, qty, barcode:product.barcode || '' });
-  saveCart(cart);
-}
-
-/* زر فتح العربة عبر زر في الزاوية (سهل التعديل لاحقًا) */
-const cartBtn = document.createElement('button'); cartBtn.className='fixed left-6 bottom-6 bg-brand-primary text-white px-4 py-2 rounded-full'; cartBtn.textContent='عربة الطلب';
-cartBtn.addEventListener('click', ()=>{ renderCartModal(); q('#cartModal').classList.remove('hidden'); q('#cartModal').classList.add('flex'); });
-document.body.appendChild(cartBtn);
-
-/* رندر مودال العربة */
-function renderCartModal(){
-  const cart = loadCart(); const box = q('#cartItems'); box.innerHTML=''; let total=0;
-  if(cart.length===0){ box.innerHTML='<div>العربة فارغة</div>'; q('#cartTotal').textContent='0'; return; }
-  cart.forEach(it=>{
-    total += it.price * it.qty;
-    const row = document.createElement('div'); row.className='flex items-center justify-between';
-    row.innerHTML = `<div><strong>${it.title}</strong><div class="text-sm text-slate-500">باركود: ${it.barcode||'—'}</div></div>
-      <div class="flex items-center gap-2">
-        <input type="number" min="1" value="${it.qty}" data-id="${it.id}" class="w-16 p-1 border rounded qtyInput">
-        <div class="text-right">${(it.price*it.qty).toFixed(2)} ${it.currency||''}</div>
-      </div>`;
-    box.appendChild(row);
-  });
-  q('#cartTotal').textContent = total.toFixed(2);
-
-  document.querySelectorAll('.qtyInput').forEach(inp=>{
-    inp.addEventListener('change', e=>{
-      const id = e.target.dataset.id; const val = parseInt(e.target.value||1);
-      const cart = loadCart(); const it = cart.find(x=>x.id===id);
-      if(it){ it.qty = val; saveCart(cart); renderCartModal(); }
-    });
-  });
-}
-
-/* زر إغلاق ومتابعة الدفع */
-q('#closeCart').addEventListener('click', ()=>{ q('#cartModal').classList.add('hidden'); q('#cartModal').classList.remove('flex'); });
-
-q('#checkoutBtn').addEventListener('click', ()=>{
-  const cart = loadCart(); if(cart.length===0){ alert('العربة فارغة'); return; }
-  // هنا نستخدم رقم التوصيل العام (يمكن تغييره لاختيار فرع)
-  const wa = CONTACT.DEL_MAIN || 'REPLACE_DELIVERY_MAIN';
-  let msg = `طلب%20من%20AlKhaled%20Sweets%0A`;
-  let total=0;
-  cart.forEach(it=>{ total += it.price*it.qty; msg += `المنتج:%20${encodeURIComponent(it.title)}%20|%20الكمية:%20${it.qty}%20|%20باركود:%20${encodeURIComponent(it.barcode)}%0A`; });
-  msg += `الإجمالي:%20${total.toFixed(2)}%0A`;
-  const url = `https://wa.me/${wa}?text=${msg}`;
-  window.open(url,'_blank');
-});
-
-/* في حالة فتح صفحة منتج مباشر */
+/* showProductPage: يعرض صفحة منتج داخل نفس index.html */
 function showProductPage(product){
-  if(!product){ q('#catalog').innerHTML = '<div class="card p-6">المنتج غير موجود</div>'; return; }
-  const container = q('#catalog'); container.innerHTML = '';
-  const html = document.createElement('div'); html.className='card';
+  if(!product){
+    q('#catalog').innerHTML = '<div class="card p-6">المنتج غير موجود</div>'; return;
+  }
+  const container = q('#catalog');
+  container.innerHTML = '';
+  const images = (product.images && product.images.length) ? product.images : ['assets/images/logo.png'];
+  const html = document.createElement('div');
+  html.className = 'card';
   html.innerHTML = `
     <div class="md:flex gap-6">
       <div class="md:w-1/2">
-        <img id="mainImg" src="${product.images[0]}" class="w-full rounded" />
-        <div class="mt-3 flex gap-2 overflow-x-auto">${product.images.map(s=>`<img src="${s}" class="h-16 w-16 rounded object-cover thumbnail cursor-pointer">`).join('')}</div>
+        <img id="mainImg" src="${images[0]}" class="w-full rounded" onerror="this.src='assets/images/logo.png'"/>
+        <div class="mt-3 flex gap-2 overflow-x-auto">
+          ${images.map(s=>`<img src="${s}" class="h-16 w-16 rounded object-cover thumbnail cursor-pointer" onerror="this.src='assets/images/logo.png'">`).join('')}
+        </div>
       </div>
       <div class="md:w-1/2">
         <h2 class="text-2xl font-bold">${product.title}</h2>
@@ -280,8 +326,23 @@ function showProductPage(product){
   `;
   container.appendChild(html);
 
-  document.querySelectorAll('.thumbnail').forEach(img=>img.addEventListener('click', e=>{ q('#mainImg').src = e.currentTarget.src; }));
-  q('#addToCartBtn').addEventListener('click', ()=>{ addToCart(product, parseInt(q('#qty').value||1)); alert('أضيف للطلب'); });
+  // تفاعل الصور المصغرة
+  document.querySelectorAll('.thumbnail').forEach(img=>{
+    img.addEventListener('click', e=>{
+      const src = e.currentTarget.src;
+      const main = q('#mainImg');
+      if(main) main.src = src;
+    });
+  });
+
+  // إضافة للعربة من صفحة المنتج
+  q('#addToCartBtn').addEventListener('click', ()=>{
+    const qty = parseInt(q('#qty').value||1);
+    addToCart(product, qty);
+    alert('تمت الإضافة إلى العربة');
+  });
+
+  // شراء الآن عبر واتساب (يرجى تعديل أرقام CONTACT قبل النشر)
   q('#buyNowBtn').addEventListener('click', ()=>{
     const qty = parseInt(q('#qty').value||1);
     const wa = CONTACT.DEL_MAIN || 'REPLACE_DELIVERY_MAIN';
@@ -294,18 +355,8 @@ function showProductPage(product){
 /* init */
 (async ()=>{
   await init();
-  // حالة فتح منتج مباشر
-  const params = new URLSearchParams(location.search);
-  const pid = params.get('product');
-  if(pid){
-    try{
-      const res = await fetch(PRODUCTS_JSON);
-      const data = await res.json();
-      const p = data.find(x=>x.id===pid);
-      showProductPage(p);
-    }catch(e){}
-  }
 })();
+
 </script>
 
 </body>
